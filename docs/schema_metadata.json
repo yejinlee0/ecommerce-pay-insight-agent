@@ -1,0 +1,74 @@
+{
+  "tables": {
+    "vw_order_full": {
+      "description": "주문/결제/고객/상품/판매자를 통합한 Semantic Flat View. Text2SQL 질의의 기본 대상 테이블.",
+      "columns": {
+        "order_id": "주문 고유 ID",
+        "order_status": "주문 상태 (delivered/canceled/shipped 등)",
+        "delivery_days": "주문~배송완료 소요 일수. NULL이면 미배송",
+        "converted": "결제완료 여부. delivered=1, 나머지=0",
+        "is_delayed": "배송지연 여부. 14일 초과=True",
+        "payment_type": "결제수단. credit_card/boleto/voucher/debit_card",
+        "payment_value": "실결제금액 (BRL 기준)",
+        "payment_installments": "할부횟수. 1=일시불, 6 이상=장기할부",
+        "freight_value": "배송비 (BRL 기준)",
+        "review_score": "고객평점. 1~5점, 5점이 최고",
+        "campaign_type": "캠페인유형. Voucher_Campaign/Installment_Promo/Standard",
+        "customer_city": "고객 거주 도시",
+        "customer_state": "고객 거주 주(state) 코드. 예: SP=상파울루",
+        "region_group": "브라질 5개 권역. Southeast/Northeast/South/North/Central-West",
+        "category_name_en": "영문 상품 카테고리명. 예: electronics, furniture",
+        "price_tier": "가격구간. Low(<50)/Mid(<150)/High(<500)/Premium(500+)",
+        "seller_city": "판매자(가맹점) 위치 도시",
+        "seller_state": "판매자(가맹점) 위치 주(state) 코드",
+        "year": "주문 연도",
+        "month": "주문 월 (1~12)",
+        "quarter": "주문 분기 (1~4)",
+        "is_weekend": "주말 주문 여부. True=주말"
+      }
+    },
+    "fact_orders": {
+      "description": "주문 팩트 테이블. vw_order_full로 조회 불가한 경우에만 사용.",
+      "columns": {
+        "order_id": "주문 고유 ID",
+        "customer_id": "고객 ID (dim_customer 참조)",
+        "product_id": "상품 ID (dim_product 참조)",
+        "seller_id": "판매자 ID (dim_seller 참조)",
+        "date_id": "날짜 ID (dim_date 참조, YYYYMMDD)",
+        "campaign_id": "캠페인 ID (dim_campaign 참조)",
+        "payment_type": "결제수단",
+        "payment_value": "실결제금액 (BRL)",
+        "payment_installments": "할부횟수",
+        "freight_value": "배송비 (BRL)",
+        "review_score": "고객평점 1~5",
+        "order_status": "주문상태",
+        "delivery_days": "배송 소요 일수",
+        "converted": "결제완료=1, 나머지=0",
+        "is_delayed": "배송지연=True",
+        "campaign_type": "캠페인유형"
+      }
+    }
+  },
+  "sample_questions": [
+    {
+      "question": "결제수단별 평균 결제금액은?",
+      "sql": "SELECT payment_type, ROUND(AVG(payment_value), 0) as avg_value FROM vw_order_full GROUP BY payment_type ORDER BY avg_value DESC"
+    },
+    {
+      "question": "지역별 평균 배송일은?",
+      "sql": "SELECT region_group, ROUND(AVG(delivery_days), 1) as avg_days FROM vw_order_full WHERE delivery_days IS NOT NULL GROUP BY region_group ORDER BY avg_days DESC"
+    },
+    {
+      "question": "배송 지연된 주문의 평균 리뷰 점수는?",
+      "sql": "SELECT is_delayed, ROUND(AVG(review_score), 2) as avg_score FROM vw_order_full WHERE review_score IS NOT NULL GROUP BY is_delayed"
+    },
+    {
+      "question": "캠페인별 전환율은?",
+      "sql": "SELECT campaign_type, ROUND(AVG(converted)*100, 1) as cvr_pct FROM vw_order_full GROUP BY campaign_type ORDER BY cvr_pct DESC"
+    },
+    {
+      "question": "Southeast 지역에서 가장 많이 팔린 카테고리 Top 5는?",
+      "sql": "SELECT category_name_en, COUNT(*) as cnt FROM vw_order_full WHERE region_group = 'Southeast' GROUP BY category_name_en ORDER BY cnt DESC LIMIT 5"
+    }
+  ]
+}
