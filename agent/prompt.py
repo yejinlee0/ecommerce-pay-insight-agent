@@ -11,7 +11,7 @@ Q: 배송 지연된 주문의 평균 리뷰 점수는?
 SQL: SELECT is_delayed, ROUND(AVG(review_score), 2) as avg_score FROM vw_order_full WHERE review_score IS NOT NULL GROUP BY is_delayed
 
 Q: 캠페인별 전환율은?
-SQL: SELECT campaign_type, ROUND(AVG(converted)*100, 1) as cvr_pct FROM vw_order_full GROUP BY campaign_type ORDER BY cvr_pct DESC
+SQL: SELECT campaign_type, ROUND(AVG(converted)*100, 1) as cvr_pct FROM vw_order_full WHERE campaign_type IS NOT NULL GROUP BY campaign_type ORDER BY cvr_pct DESC
 
 Q: Southeast 지역에서 가장 많이 팔린 카테고리 Top 5는?
 SQL: SELECT category_name_en, COUNT(*) as cnt FROM vw_order_full WHERE region_group = 'Southeast' GROUP BY category_name_en ORDER BY cnt DESC LIMIT 5
@@ -39,7 +39,8 @@ SQL_PROMPT = ChatPromptTemplate.from_messages([
 2. SQL만 반환하세요. 설명이나 마크다운 없이 순수 SQL만 출력하세요
 3. 컬럼명은 스키마에 있는 것만 사용하세요
 4. LIMIT는 명시되지 않으면 붙이지 마세요
-
+5. GROUP BY를 사용할 때 NULL 값은 반드시 제외하세요 (예: WHERE column IS NOT NULL)
+     
 === Few-shot 예시 ===
 {few_shot}
 
